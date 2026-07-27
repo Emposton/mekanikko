@@ -27,11 +27,12 @@ function MekanikkoGame() {
     oil: new Image()
   });
 
-  images.current.car.src = "https://i.imgur.com/7sZ4Z0N.png";     // mopoauto
-  images.current.cvt.src = "https://i.imgur.com/8kQJ2yW.png";     // CVT
-  images.current.brakes.src = "https://i.imgur.com/1YQKp4T.png";  // jarrut
-  images.current.lights.src = "https://i.imgur.com/9tq7p3F.png";  // valot
-  images.current.oil.src = "https://i.imgur.com/6Zk4p8B.png";     // öljy
+ images.current.car.src = "https://raw.githubusercontent.com/kenneyNL/vehicle-pack/master/PNG/Default/car.png";
+images.current.cvt.src = "https://raw.githubusercontent.com/kenneyNL/gear-pack/master/PNG/gear_3.png";
+images.current.brakes.src = "https://raw.githubusercontent.com/kenneyNL/vehicle-parts/master/PNG/brake.png";
+images.current.lights.src = "https://raw.githubusercontent.com/kenneyNL/vehicle-lights/master/PNG/light.png";
+images.current.oil.src = "https://raw.githubusercontent.com/kenneyNL/food-pack/master/PNG/oil.png";
+
 
   const parts = useRef([
     { id: "cvt", x: 260, y: 190, w: 80, h: 40, img: "cvt", state: "kiinni" },
