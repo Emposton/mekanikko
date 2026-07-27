@@ -1,0 +1,70 @@
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #111;
+  color: #eee;
+}
+
+#root {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.game-container {
+  background: #1c1c1c;
+  border-radius: 12px;
+  padding: 20px;
+  width: 900px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.6);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.garage-view {
+  display: flex;
+  gap: 16px;
+}
+
+.car-panel, .actions-panel {
+  flex: 1;
+  background: #222;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+button {
+  background: #3b82f6;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+button:hover {
+  background: #2563eb;
+}
+
+.log {
+  margin-top: 12px;
+  background: #181818;
+  border-radius: 8px;
+  padding: 8px;
+  max-height: 160px;
+  overflow-y: auto;
+  font-size: 13px;
+}
