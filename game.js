@@ -1,118 +1,201 @@
-const { useState } = React;
+const { useState, useEffect, useRef } = React;
 
 function MekanikkoGame() {
   const [money, setMoney] = useState(500);
-  const [reputation, setReputation] = useState(1);
-  const [carState, setCarState] = useState({
-    cvt: "Vinkuu kovilla kierroksilla",
-    brakes: "Pehmeä poljin, vähän tehoa",
-    lights: "Takavalossa kosketushäiriö",
-    oil: "Öljy tummaa, ei kriittinen"
-  });
+  const [reputation, setReputation] = useState(1.0);
   const [log, setLog] = useState([
-    "Tervetuloa mopoautokorjaamoon – ensimmäinen asiakas odottaa!"
+    "Tervetuloa pseudo-3D mopoautokorjaamoon!"
+  ]);
+  const [selectedPart, setSelectedPart] = useState(null);
+  const canvasRef = useRef(null);
+
+  const parts = useRef([
+    { id: "cvt", x: 260, y: 190, w: 80, h: 40, color: "#f97316", state: "kiinni" },
+    { id: "brakes", x: 180, y: 230, w: 60, h: 30, color: "#22c55e", state: "kulunut" },
+    { id: "lights", x: 360, y: 170, w: 40, h: 25, color: "#eab308", state: "pätkii" },
+    { id: "oil", x: 310, y: 140, w: 30, h: 30, color: "#0ea5e9", state: "tumma" }
   ]);
 
+  const dragState = useRef({
+    dragging: false,
+    partId: null,
+    offsetX: 0,
+    offsetY: 0
+  });
+
   function addLog(msg) {
-    setLog(prev => [msg, ...prev].slice(0, 20));
+    setLog(prev => [msg, ...prev].slice(0, 25));
   }
 
-  function diagnose(part) {
-    switch (part) {
-      case "cvt":
-        addLog("Diagnostiikka: CVT-hihna kulunut, kotelo likainen.");
-        break;
-      case "brakes":
-        addLog("Diagnostiikka: Jarruneste vanhaa, takasylinteri vähän jumissa.");
-        break;
-      case "lights":
-        addLog("Diagnostiikka: Maadoitus huono, liitin hapettunut.");
-        break;
-      case "oil":
-        addLog("Diagnostiikka: Öljynvaihto suositeltu, ei pakollinen.");
-        break;
-      default:
-        addLog("Diagnostiikka: Ei valittua osaa.");
+  function drawScene(ctx) {
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    // pseudo-3D lattia
+    ctx.fillStyle = "#111";
+    ctx.fillRect(0, 260, 600, 140);
+    ctx.fillStyle = "#1f2937";
+    ctx.beginPath();
+    ctx.moveTo(0, 260);
+    ctx.lineTo(600, 260);
+    ctx.lineTo(600, 240);
+    ctx.lineTo(0, 240);
+    ctx.closePath();
+    ctx.fill();
+
+    // auto (runko)
+    ctx.fillStyle = "#6b7280";
+    ctx.fillRect(150, 180, 260, 70);
+    ctx.fillStyle = "#9ca3af";
+    ctx.fillRect(190, 150, 180, 40);
+
+    // renkaat
+    ctx.fillStyle = "#000";
+    ctx.beginPath();
+    ctx.arc(190, 250, 22, 0, Math.PI * 2);
+    ctx.arc(340, 250, 22, 0, Math.PI * 2);
+    ctx.fill();
+
+    // osat (placeholder-3D)
+    parts.current.forEach(p => {
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x, p.y, p.w, p.h);
+      ctx.fillStyle = "#000";
+      ctx.font = "10px system-ui";
+      ctx.fillText(p.id.toUpperCase(), p.x + 4, p.y + 12);
+    });
+  }
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    drawScene(ctx);
+
+    function getPartAt(x, y) {
+      return parts.current.find(
+        p => x >= p.x && x <= p.x + p.w && y >= p.y && y <= p.y + p.h
+      );
     }
-  }
 
-  function repair(part) {
+    function onMouseDown(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const part = getPartAt(x, y);
+      if (part) {
+        dragState.current.dragging = true;
+        dragState.current.partId = part.id;
+        dragState.current.offsetX = x - part.x;
+        dragState.current.offsetY = y - part.y;
+        setSelectedPart(part.id);
+        addLog(`Valitsit osan: ${part.id.toUpperCase()}`);
+      }
+    }
+
+    function onMouseMove(e) {
+      if (!dragState.current.dragging) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const part = parts.current.find(p => p.id === dragState.current.partId);
+      if (part) {
+        part.x = x - dragState.current.offsetX;
+        part.y = y - dragState.current.offsetY;
+        drawScene(ctx);
+      }
+    }
+
+    function onMouseUp() {
+      dragState.current.dragging = false;
+      dragState.current.partId = null;
+    }
+
+    canvas.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+
+    return () => {
+      canvas.removeEventListener("mousedown", onMouseDown);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, []);
+
+  function repairSelected() {
+    if (!selectedPart) {
+      addLog("Valitse ensin osa canvasista.");
+      return;
+    }
     if (money < 50) {
       addLog("Ei tarpeeksi rahaa korjaukseen.");
       return;
     }
+    setMoney(m => m - 50);
+    setReputation(r => r + 0.2);
 
-    setMoney(money - 50);
-    setReputation(reputation + 0.1);
-
-    switch (part) {
-      case "cvt":
-        setCarState(s => ({ ...s, cvt: "CVT toimii pehmeästi, ei vinkunaa." }));
-        addLog("Korjaus: Vaihdettiin CVT-hihna ja puhdistettiin kotelo.");
-        break;
-      case "brakes":
-        setCarState(s => ({ ...s, brakes: "Jarrut terävät ja tasaiset." }));
-        addLog("Korjaus: Vaihdettiin jarruneste ja herkistettiin takasylinteri.");
-        break;
-      case "lights":
-        setCarState(s => ({ ...s, lights: "Kaikki valot toimivat moitteetta." }));
-        addLog("Korjaus: Puhdistettiin liittimet ja parannettiin maadoitus.");
-        break;
-      case "oil":
-        setCarState(s => ({ ...s, oil: "Tuore öljy, moottori käy nätisti." }));
-        addLog("Korjaus: Öljynvaihto tehty.");
-        break;
-      default:
-        addLog("Korjaus: Ei valittua osaa.");
+    const part = parts.current.find(p => p.id === selectedPart);
+    if (part) {
+      part.state = "kunnossa";
+      part.color = "#22c55e";
+      addLog(`Korjasit osan: ${selectedPart.toUpperCase()}`);
+      const ctx = canvasRef.current.getContext("2d");
+      drawScene(ctx);
     }
   }
 
   function testDrive() {
-    addLog("Testiajo: Mopoauto kiihtyy tasaisesti, ei ylimääräisiä ääniä.");
-    setMoney(money + 80);
-    setReputation(reputation + 0.2);
+    addLog("Testiajo: auto kiihtyy, tarkistetaan korjatut osat...");
+    const allGood = parts.current.every(p => p.state === "kunnossa");
+    if (allGood) {
+      addLog("Testiajo: kaikki kunnossa, asiakas tyytyväinen!");
+      setMoney(m => m + 120);
+      setReputation(r => Math.min(5, r + 0.5));
+    } else {
+      addLog("Testiajo: jokin osa vielä pielessä, asiakas ei täysin tyytyväinen.");
+      setReputation(r => Math.max(0, r - 0.2));
+    }
   }
 
-  return (
-    React.createElement("div", { className: "game-container" },
-      React.createElement("div", { className: "header" },
-        React.createElement("div", null,
-          React.createElement("h2", null, "Mekanikko – Superpeli"),
-          React.createElement("p", null, "Korjaa mopoauto, pidä maine ja rahat tasapainossa.")
-        ),
-        React.createElement("div", null,
-          React.createElement("p", null, `Rahat: €${money.toFixed(0)}`),
-          React.createElement("p", null, `Maine: ${reputation.toFixed(1)} / 5`)
-        )
+  return React.createElement(
+    "div",
+    { className: "game-container" },
+    React.createElement(
+      "div",
+      { className: "canvas-wrapper" },
+      React.createElement("h3", null, "Mopoauto – pseudo 3D näkymä"),
+      React.createElement("canvas", {
+        ref: canvasRef,
+        width: 600,
+        height: 400
+      })
+    ),
+    React.createElement(
+      "div",
+      { className: "side-panel" },
+      React.createElement("h3", null, "Korjauspaneeli"),
+      React.createElement("p", null, `Rahat: €${money.toFixed(0)}`),
+      React.createElement("p", null, `Maine: ${reputation.toFixed(1)} / 5`),
+      React.createElement(
+        "p",
+        null,
+        selectedPart
+          ? `Valittu osa: ${selectedPart.toUpperCase()}`
+          : "Valitse osa klikkaamalla canvasia."
       ),
-      React.createElement("div", { className: "garage-view" },
-        React.createElement("div", { className: "car-panel" },
-          React.createElement("h3", null, "Mopoauto korjaamolla"),
-          React.createElement("p", null, "CVT: ", carState.cvt),
-          React.createElement("p", null, "Jarrut: ", carState.brakes),
-          React.createElement("p", null, "Valot: ", carState.lights),
-          React.createElement("p", null, "Öljy: ", carState.oil),
-          React.createElement("div", { className: "button-row" },
-            React.createElement("button", { onClick: () => diagnose("cvt") }, "Diagnosoi CVT"),
-            React.createElement("button", { onClick: () => diagnose("brakes") }, "Diagnosoi jarrut"),
-            React.createElement("button", { onClick: () => diagnose("lights") }, "Diagnosoi valot"),
-            React.createElement("button", { onClick: () => diagnose("oil") }, "Diagnosoi öljy")
-          )
-        ),
-        React.createElement("div", { className: "actions-panel" },
-          React.createElement("h3", null, "Toiminnot"),
-          React.createElement("div", { className: "button-row" },
-            React.createElement("button", { onClick: () => repair("cvt") }, "Korjaa CVT"),
-            React.createElement("button", { onClick: () => repair("brakes") }, "Korjaa jarrut"),
-            React.createElement("button", { onClick: () => repair("lights") }, "Korjaa valot"),
-            React.createElement("button", { onClick: () => repair("oil") }, "Vaihda öljy"),
-            React.createElement("button", { onClick: testDrive }, "Testiajo ja luovutus")
-          ),
-          React.createElement("div", { className: "log" },
-            log.map((entry, i) =>
-              React.createElement("div", { key: i }, "• ", entry)
-            )
-          )
+      React.createElement(
+        "button",
+        { onClick: repairSelected },
+        "Korjaa valittu osa"
+      ),
+      React.createElement(
+        "button",
+        { onClick: testDrive },
+        "Testiajo"
+      ),
+      React.createElement(
+        "div",
+        { className: "log" },
+        log.map((entry, i) =>
+          React.createElement("div", { key: i }, "• ", entry)
         )
       )
     )
