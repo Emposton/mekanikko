@@ -27,11 +27,11 @@ function MekanikkoGame() {
     oil: new Image()
   });
 
- images.current.car.src = "https://raw.githubusercontent.com/kenneyNL/vehicle-pack/master/PNG/Default/car.png";
-images.current.cvt.src = "https://raw.githubusercontent.com/kenneyNL/gear-pack/master/PNG/gear_3.png";
-images.current.brakes.src = "https://raw.githubusercontent.com/kenneyNL/vehicle-parts/master/PNG/brake.png";
-images.current.lights.src = "https://raw.githubusercontent.com/kenneyNL/vehicle-lights/master/PNG/light.png";
-images.current.oil.src = "https://raw.githubusercontent.com/kenneyNL/food-pack/master/PNG/oil.png";
+ images.current.car.src = "images/mauto.jpg";
+images.current.cvt.src = "images/cvt.webp";
+images.current.brakes.src = "images/jarru.webp";
+images.current.lights.src = "images/valo.jpg";
+images.current.oil.src = "images/oljy.webp";
 
 
   const parts = useRef([
